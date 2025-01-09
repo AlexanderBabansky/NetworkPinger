@@ -1,4 +1,7 @@
 #include "NMTimer.h"
+#include "NMTimer.h"
+#include "NMTimer.h"
+#include "NMTimer.h"
 
 #include <cmath>
 #include <thread>
@@ -32,10 +35,11 @@ int64_t NMTimer::elapsedUs() const
     if (mPaused) {
         return mAddDurationUs
                + NM_Chrono::duration_cast<NM_Chrono::microseconds>(mPausedPoint - mStartPoint)
-                         .count();
+                     .count();
     }
     return mAddDurationUs
-           + NM_Chrono::duration_cast<NM_Chrono::microseconds>(NM_Clock::now() - mStartPoint).count();
+           + NM_Chrono::duration_cast<NM_Chrono::microseconds>(NM_Clock::now() - mStartPoint)
+                 .count();
 }
 
 double NMTimer::elapsedMs() const { return elapsedUs() / 1000.0; }
@@ -156,14 +160,35 @@ void NMTimer::sleepMs(uint32_t ms)
 #endif
 }
 
+bool NMTimer::sleepMsCondition(uint32_t ms, HANDLE condition)
+{
+    if (WaitForSingleObject(condition, ms) == WAIT_TIMEOUT) {
+        return true;
+    }
+    return false;
+}
+
 void NMTimer::sleepUntilMs(int64_t ms) const
 {
     uint32_t sleepForMs = uint32_t(std::max((ms - this->elapsedMs()), 0.0));
     sleepMs(sleepForMs);
 }
 
+bool NMTimer::sleepUntilMsCondition(int64_t ms, HANDLE condition) const
+{
+    uint32_t sleepForMs = uint32_t(std::max((ms - this->elapsedMs()), 0.0));
+    return sleepMsCondition(sleepForMs, condition);
+}
+
 void NMTimer::sleepUntilMsAndStart(int64_t ms)
 {
     sleepUntilMs(ms);
     mStartPoint = mStartPoint + NM_Chrono::microseconds(int64_t(ms * 1000));
+}
+
+bool NMTimer::sleepUntilMsConditionAndStart(int64_t ms, HANDLE condition)
+{
+    auto r = sleepUntilMsCondition(ms, condition);
+    mStartPoint = mStartPoint + NM_Chrono::microseconds(int64_t(ms * 1000));
+    return r;
 }

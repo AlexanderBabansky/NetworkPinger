@@ -8,6 +8,9 @@
 #include <Windows.h>
 #include <strsafe.h>
 #include <stdio.h>
+#include "service_utils.h"
+
+LPCSTR SVCNAME = "Test";
 
 namespace {
 std::vector<std::string> collectIps(const std::vector<DBManager::WiFi> &wifis)
@@ -35,70 +38,34 @@ std::vector<DBManager::WiFiStatus> collectStatuses(const std::vector<DBManager::
 
 } // namespace
 
-VOID SvcReportEvent(LPCSTR szFunction, LPCSTR srcName)
-{
-    DWORD SVC_ERROR = 0;
-
-    HANDLE hEventSource = NULL;
-    LPCTSTR lpszStrings[2];
-    TCHAR Buffer[80];
-
-    hEventSource = RegisterEventSource(NULL, srcName);
-
-    if (NULL != hEventSource) {
-        StringCchPrintf(Buffer, 80, TEXT("%s"), szFunction);
-
-        lpszStrings[0] = srcName;
-        lpszStrings[1] = Buffer;
-
-        ReportEvent(hEventSource,        // event log handle
-                    EVENTLOG_ERROR_TYPE, // event type
-                    0,                   // event category
-                    SVC_ERROR,           // event identifier
-                    NULL,                // no security identifier
-                    2,                   // size of lpszStrings array
-                    0,                   // no binary data
-                    lpszStrings,         // array of strings
-                    NULL);               // no binary data
-
-        DeregisterEventSource(hEventSource);
-    }
-}
-
-VOID WINAPI SvcMain(DWORD, LPTSTR *) { SvcReportEvent("Hello", "SvcMain"); }
-
 #define SVCNAME TEXT("Test")
-
-int main()
+DWORD ServiceMain(HANDLE stopEvent)
 {
-    //SvcReportEvent("Hello", "Main");
-    SERVICE_TABLE_ENTRY DispatchTable[] = {{SVCNAME, (LPSERVICE_MAIN_FUNCTION)SvcMain},
-                                           {NULL, NULL}};
-    if (!StartServiceCtrlDispatcher(DispatchTable)) {
-        SvcReportEvent(TEXT("StartServiceCtrlDispatcher"));
-    } 
-
-    return 0;
-    const char *filename = "db.db";
-    int timeoutMs = 1000;
-
-    DBManager dbManager(filename);
-
-    NMTimer timer;
-    while (1) {
-        auto wifis = dbManager.fetchWifi();
-        auto pingResult = NetworkPingerMulithread::ping(collectIps(wifis), timeoutMs);
-
-        printf("------------\n");
-        for (int a = 0; a < pingResult.size(); ++a) {
-            printf("%s %d\n", wifis[a].ip.c_str(), pingResult[a] ? 1 : 0);
-        }
-
-        time_t timestamp = time(NULL);
-        dbManager.insertStatus(collectStatuses(wifis, pingResult), timestamp);
-        timer.sleepUntilMsAndStart(timeoutMs);
-        SvcReportEvent("Hello", SVCNAME);
+    auto dbPath = service_utils::get_environment_variable("PINGER_DB");
+    auto interval = service_utils::get_environment_variable_int("PINGER_INTERVAL");
+    if (!dbPath || !interval) {
+        service_utils::SvcReportMessage("No ENV variables", SVCNAME);
+        return 1;
     }
+    try {
+        DBManager dbManager(dbPath->c_str());
+        NMTimer timer;
 
+        while (1) {
+            auto wifis = dbManager.fetchWifi();
+            auto pingResult = NetworkPingerMulithread::ping(collectIps(wifis), interval.value(),
+                                                            stopEvent);
+
+            time_t timestamp = time(NULL);
+            dbManager.insertStatus(collectStatuses(wifis, pingResult), timestamp);
+
+            if (timer.sleepUntilMsConditionAndStart(interval.value(), stopEvent) == false) {
+                break;
+            }
+        }
+    } catch (std::exception &e) {
+        service_utils::SvcReportMessage(e.what(), SVCNAME);
+        return 1;
+    }
     return 0;
 }

@@ -4,7 +4,7 @@
 #include <cassert>
 
 std::vector<bool> NetworkPingerMulithread::ping(std::vector<std::string> addressesToPing,
-                                                int timeoutMs, uint16_t startId)
+                                                int timeoutMs, HANDLE interrupt, uint16_t startId)
 {
     std::vector<std::future<bool>> pingTasks;
 

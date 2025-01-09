@@ -2,6 +2,7 @@
 #define NMTIMER_H
 
 #include <chrono>
+#include <Windows.h>
 
 #define NM_Chrono std::chrono
 
@@ -31,8 +32,11 @@ public:
     bool isPaused() const { return mPaused; }
 
     static void sleepMs(uint32_t ms);
+    static bool sleepMsCondition(uint32_t ms, HANDLE condition);
     void sleepUntilMs(int64_t ms) const;
-    void sleepUntilMsAndStart(int64_t ms);    
+    bool sleepUntilMsCondition(int64_t ms, HANDLE condition) const;
+    void sleepUntilMsAndStart(int64_t ms);
+    bool sleepUntilMsConditionAndStart(int64_t ms, HANDLE condition);
 
 private:
     NM_Clock::time_point mStartPoint = {};

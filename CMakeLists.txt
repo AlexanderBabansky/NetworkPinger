@@ -7,6 +7,7 @@ if (POLICY CMP0141)
 endif()
 
 project ("NetworkPinger")
+set(CMAKE_CXX_STANDARD 20 REQUIRED)
 
 add_library(core STATIC OnExit.h OnExit.cpp NMTimer.h NMTimer.cpp)
 target_compile_definitions(core PRIVATE NOMINMAX)
@@ -27,10 +28,16 @@ endif()
 add_executable (NetworkPinger main.cpp)
 target_link_libraries(NetworkPinger PRIVATE network)
 
-add_executable(Service service.cpp sqlite3.c sqlite3.h sqlite3ext.h
-    DBManager.cpp DBManager.h
+
+add_library(service_wrapper STATIC
+    service_wrapper.cpp service_wrapper.h
+    service_utils.cpp service_utils.h
 )
-target_link_libraries(Service PRIVATE network)
+
+add_executable(Service service.cpp sqlite3.c sqlite3.h sqlite3ext.h
+    DBManager.cpp DBManager.h    
+)
+target_link_libraries(Service PRIVATE network service_wrapper)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET NetworkPinger PROPERTY CXX_STANDARD 20)
