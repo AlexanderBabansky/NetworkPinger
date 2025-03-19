@@ -36,11 +36,6 @@ public:
 
     static void sleepMs(uint32_t ms);
     void sleepUntilMs(int64_t ms) const;
-
-#ifdef _WIN32
-    static bool sleepMsCondition(uint32_t ms, HANDLE condition);
-    bool sleepUntilMsCondition(int64_t ms, HANDLE condition) const;
-#endif
     void sleepUntilMsAndStart(int64_t ms);
 
 private:

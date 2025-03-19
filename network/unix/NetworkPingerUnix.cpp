@@ -61,7 +61,7 @@ bool checkIcmpPacket(const struct icmphdr *icmp_header, uint16_t sequence)
     return true;
 }
 
-bool ping_device(const std::string &ipAddress, int timeoutMs, uint16_t sequence)
+bool NetworkPinger::ping_device(const std::string &ipAddress, int timeoutMs, uint16_t sequence)
 {
     int sockfd = 0;
     sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);

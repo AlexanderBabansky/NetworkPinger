@@ -1,7 +1,5 @@
 #pragma once
 
-#include "NetworkPingerMulithread.h"
-
 #ifdef _WIN32
 #include <Windows.h>
 #define SHARED_EXPORT __declspec(dllexport)

@@ -1,7 +1,4 @@
 #include "NMTimer.h"
-#include "NMTimer.h"
-#include "NMTimer.h"
-#include "NMTimer.h"
 
 #include <cmath>
 #include <thread>
