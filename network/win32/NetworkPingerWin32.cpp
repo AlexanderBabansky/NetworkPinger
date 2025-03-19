@@ -10,7 +10,7 @@
 
 #include "NetworkPinger.h"
 
-bool ping_device(const std::string &ipAddress, int timeoutMs, uint16_t sequence)
+bool NetworkPinger::ping_device(const std::string &ipAddress, int timeoutMs, uint16_t sequence)
 {
     IPAddr ip = inet_addr(ipAddress.c_str());
     if (ip == INADDR_NONE) {

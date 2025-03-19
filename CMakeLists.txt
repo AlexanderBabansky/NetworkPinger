@@ -9,38 +9,8 @@ endif()
 project ("NetworkPinger")
 set(CMAKE_CXX_STANDARD 20 REQUIRED)
 
-add_library(core STATIC OnExit.h OnExit.cpp NMTimer.h NMTimer.cpp)
-target_compile_definitions(core PRIVATE NOMINMAX)
-
-add_library(network STATIC
-    NetworkPinger.h
-    NetworkPingerMulithread.cpp NetworkPingerMulithread.h
-    )
-target_link_libraries(network PRIVATE core)
-if (WIN32)    
-    target_sources(network PRIVATE NetworkPingerWin32.cpp)
-    target_link_libraries(network PRIVATE Iphlpapi.lib ws2_32.lib)
-else()
-    target_sources(network PRIVATE NetworkPingerUnix.cpp)
-endif()
-
-# Add source to this project's executable.
-add_executable (NetworkPinger main.cpp)
-target_link_libraries(NetworkPinger PRIVATE network)
-
-
-add_library(service_wrapper STATIC
-    service_wrapper.cpp service_wrapper.h
-    service_utils.cpp service_utils.h
-)
-
-add_executable(Service service.cpp sqlite3.c sqlite3.h sqlite3ext.h
-    DBManager.cpp DBManager.h    
-)
-target_link_libraries(Service PRIVATE network service_wrapper)
-
-if (CMAKE_VERSION VERSION_GREATER 3.12)
-  set_property(TARGET NetworkPinger PROPERTY CXX_STANDARD 20)
-endif()
-
+add_subdirectory(core)
+add_subdirectory(network)
+add_subdirectory(network_c)
+add_subdirectory(tests)
 
