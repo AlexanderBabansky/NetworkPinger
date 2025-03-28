@@ -1,0 +1,7 @@
+[requires]
+rabbitmq-c/0.15.0
+[generators]
+CMakeDeps
+CMakeToolchain
+[layout]
+cmake_layout
