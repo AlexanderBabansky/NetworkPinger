@@ -14,6 +14,8 @@ SET(CMAKE_PREFIX_PATH
         )
 
 add_subdirectory(core)
+add_subdirectory(stdlogger)
+add_subdirectory(win32service)
 add_subdirectory(network)
 add_subdirectory(network_c)
 add_subdirectory(tests)

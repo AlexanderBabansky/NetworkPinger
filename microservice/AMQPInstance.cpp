@@ -3,20 +3,12 @@
 #include <cstdarg>
 #include <cstdio>
 #include <vector>
+#include "winsock2.h"
 
-#include "winsock.h"
+#include "NMLogger.h"
 
 namespace {
 constexpr int CHANNEL_ID = 1;
-
-void RE_LOG_ERROR(const char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    vfprintf(stderr, format, args);
-    va_end(args);
-    fprintf(stderr, "\n");
-}
 
 struct timeval create_timeval_from_ms(long milliseconds)
 {
@@ -60,6 +52,7 @@ std::shared_ptr<AMQPInstance> AMQPInstance::create(const char *hostname, int por
     amqp_channel_open(result->conn, CHANNEL_ID);
     reply = amqp_get_rpc_reply(result->conn);
     if (reply.reply_type != AMQP_RESPONSE_NORMAL) {
+        RE_LOG_ERROR("Failed to amqp_channel_open");
         return {};
     }
     result->mChOpened = true;
@@ -123,10 +116,13 @@ std::string AMQPInstance::receiveMessage()
         amqp_rpc_reply_t res{};
         amqp_envelope_t envelope{0};
         res = amqp_consume_message(conn, &envelope, &timeout, 0);
+
+        if (AMQP_RESPONSE_NORMAL != res.reply_type && res.library_error == AMQP_STATUS_TIMEOUT) {
+            continue;
+        }
         if (AMQP_RESPONSE_NORMAL != res.reply_type) {
-            if (!mShouldStop) {
-                continue;
-            }
+            RE_LOG_ERROR("Failed to amqp_consume_message");
+            return {};
         }
         std::string envelopeVec;
         envelopeVec.resize(envelope.message.body.len);
@@ -148,7 +144,7 @@ bool AMQPInstance::sendString(const char *queueName, const std::string &msg)
     status = amqp_basic_publish(conn, CHANNEL_ID, amqp_empty_bytes, amqp_cstring_bytes(queueName),
                                 0, 0, &props, amqp_cstring_bytes(msg.c_str()));
     if (status) {
-        RE_LOG_ERROR("Failed to send response to queue %s", queueName);
+        RE_LOG_ERROR("Failed to amqp_basic_publish to queue %s", queueName);
         return false;
     }
     return true;
