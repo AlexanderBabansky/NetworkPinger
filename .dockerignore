@@ -1,0 +1,7 @@
+out
+.vs
+CMakePresets.json
+CMakeSettings.json
+Dockerfile
+.dockerignore
+.gitignore
