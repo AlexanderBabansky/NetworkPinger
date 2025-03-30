@@ -1,13 +1,12 @@
 #include "catch2/catch_all.hpp"
 #include <future>
-#include "NetworkPingerMulithread_c.h"
+#include "NetworkPingerMulithread.h"
 
 TEST_CASE("Ping")
 {
-    const char *pingArr[2]{"128.0.0.1", "127.0.0.1"};
-    bool results[2]{false};
-    ping_c(2, pingArr, 1000, 3, results);
-    
-    CHECK(results[0] == false);
-    CHECK(results[1] == true);
+    std::vector<std::string> pingArr{"127.0.0.1", "128.0.0.1"};
+    auto results = NetworkPingerMulithread::ping(pingArr, 10, 3);
+    REQUIRE(results.size() == 2);
+    CHECK(results[0] == true);
+    CHECK(results[1] == false);
 }

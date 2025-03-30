@@ -4,19 +4,24 @@
 #include <cassert>
 
 std::vector<bool> NetworkPingerMulithread::ping(std::vector<std::string> addressesToPing,
-                                                int timeoutMs, int tries_count, uint16_t startId)
+                                                int timeoutMs, int tries_count)
 {
     std::vector<std::future<bool>> pingTasks;
 
-    uint16_t sequence = startId;
+    uint16_t sequence = 0;
     for (auto &pingAddress : addressesToPing) {
-        ++sequence;
+        sequence += tries_count;
         pingTasks.push_back(
             std::async(std::launch::async, [pingAddress, timeoutMs, sequence, tries_count]() {
                 bool status = false;
                 int try_id = 0;
                 while (status == false && try_id < tries_count) {
-                    status = NetworkPinger::ping_device(pingAddress, timeoutMs, sequence);
+                    uint16_t pid = 0;
+#ifndef WIN32
+                    pid = getpid();
+#endif // ! WIN32
+
+                    status = NetworkPinger::ping_device(pingAddress, timeoutMs, pid, sequence);
                     ++try_id;
                 }
                 return status;

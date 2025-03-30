@@ -57,3 +57,37 @@ std::string AMQPStructs::processJsonRequest(const std::string &msg)
     auto pingResponse = getPingResponseFromRequest(pingRequest.value());
     return pingResponse.toJsonString();
 }
+
+std::optional<ArgsInfo> AMQPStructs::parseArgsInfo(int dwArgc, char **lpszArgv)
+{
+    if (dwArgc != 7) {
+        return {};
+    }
+    ArgsInfo result{};
+    result.hostname = lpszArgv[1];
+    result.port = utils::strToInt(lpszArgv[2]);
+    result.username = lpszArgv[3];
+    result.password = lpszArgv[4];
+    result.queueNameRequest = lpszArgv[5];
+    result.queueNameResponse = lpszArgv[6];
+    return result;
+}
+
+std::optional<ArgsInfo> AMQPStructs::parseArgsInfoEnv()
+{
+    ArgsInfo result{};
+    result.hostname = getenv("AMQP_HOSTNAME");
+    if (!result.hostname) {
+        return {};
+    }
+    result.port = utils::strToInt(getenv("AMQP_PORT"));
+    if (result.port == 0) {
+        return {};
+    }
+    result.username = getenv("AMQP_USERNAME");
+    result.password = getenv("AMQP_PASSWORD");
+    result.queueNameRequest = getenv("AMQP_QUEUE_REQUEST");
+    result.queueNameResponse = getenv("AMQP_QUEUE_RESPONSE");
+
+    return result;
+}

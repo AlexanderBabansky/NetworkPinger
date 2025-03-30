@@ -1,9 +1,12 @@
 #include "AMQPInstance.h"
+#ifdef _WIN32
+#include "winsock2.h"
+#endif
 
 #include <cstdarg>
 #include <cstdio>
 #include <vector>
-#include "winsock2.h"
+#include <cstring>
 
 #include "NMLogger.h"
 

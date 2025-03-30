@@ -46,13 +46,12 @@ struct timeval milliseconds_to_timeval(long milliseconds)
     return tv;
 }
 
-bool checkIcmpPacket(const struct icmphdr *icmp_header, uint16_t sequence)
+bool checkIcmpPacket(const struct icmphdr *icmp_header, uint16_t pid, uint16_t sequence)
 {
     if (icmp_header->type != 0) {
         return false;
-    }
-    uint16_t pid16 = getpid();
-    if (ntohs(icmp_header->un.echo.id) != pid16) {
+    }    
+    if (ntohs(icmp_header->un.echo.id) != pid) {
         return false;
     }
     if (ntohs(icmp_header->un.echo.sequence) != sequence) {
@@ -61,7 +60,8 @@ bool checkIcmpPacket(const struct icmphdr *icmp_header, uint16_t sequence)
     return true;
 }
 
-bool NetworkPinger::ping_device(const std::string &ipAddress, int timeoutMs, uint16_t sequence)
+bool NetworkPinger::ping_device(const std::string &ipAddress, int timeoutMs, uint16_t pid,
+                                uint16_t sequence)
 {
     int sockfd = 0;
     sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
@@ -80,7 +80,7 @@ bool NetworkPinger::ping_device(const std::string &ipAddress, int timeoutMs, uin
     struct icmphdr icmp_hdr
     {};
     icmp_hdr.type = ICMP_ECHO;
-    icmp_hdr.un.echo.id = htons(getpid());
+    icmp_hdr.un.echo.id = htons(pid);
     icmp_hdr.un.echo.sequence = htons(sequence);
     icmp_hdr.checksum = checksum(&icmp_hdr, sizeof(icmp_hdr));
 
@@ -121,7 +121,7 @@ bool NetworkPinger::ping_device(const std::string &ipAddress, int timeoutMs, uin
                                                          + sizeof(
                                                              struct iphdr)); // Cast to ICMP header
 
-        if (checkIcmpPacket(icmp_header, sequence)) {
+        if (checkIcmpPacket(icmp_header, pid, sequence)) {
             return true;
         }
     }

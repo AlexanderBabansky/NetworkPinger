@@ -9,15 +9,18 @@ endif()
 project ("NetworkPinger")
 set(CMAKE_CXX_STANDARD 20 REQUIRED)
 SET(CMAKE_PREFIX_PATH
-        ${CMAKE_BINARY_DIR}/conan_packages
+        ${CMAKE_BINARY_DIR}
         ${CMAKE_PREFIX_PATH}
         )
+option(BUILD_TESTS OFF)
 
 add_subdirectory(core)
 add_subdirectory(stdlogger)
-add_subdirectory(win32service)
+if (WIN32)
+    add_subdirectory(win32service)
+endif()
 add_subdirectory(network)
-add_subdirectory(network_c)
-add_subdirectory(tests)
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
 add_subdirectory(microservice)
-
